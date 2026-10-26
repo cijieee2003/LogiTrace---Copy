@@ -1,33 +1,15 @@
-// import axios from 'axios';
-
-// const axiosClient = axios.create({
-//   baseURL: 'http://10.5.50.121:8000/api',
-//   headers: {
-//     Accept: "application/json"
-//   }
-// });
-
-// axiosClient.interceptors.request.use((config) => {
-//   const token = localStorage.getItem('token');
-//   config.headers.Authorization = `Bearer ${token}`;
-//   return config;
-// });
-
-// export default axiosClient;
-
 
 import axios from "axios";
 
 const axiosClient = axios.create({
-  baseURL: "http://172.20.10.2:8000/api",
-  // baseURL: "http://localhost:8000/api",
+  baseURL: import.meta.env.VITE_API_URL,
   headers: {
     Accept: "application/json",
     "Content-Type": "application/json",
   },
 });
 
-// Add token to every request
+// Add Bearer token to every request when available
 axiosClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -43,7 +25,7 @@ axiosClient.interceptors.request.use(
   }
 );
 
-// Handle authentication errors
+// Handle API responses and authentication errors
 axiosClient.interceptors.response.use(
   (response) => {
     return response;
@@ -54,7 +36,7 @@ axiosClient.interceptors.response.use(
 
       localStorage.removeItem("token");
 
-      // Optional:
+      // Uncomment if you want to redirect automatically to login
       // window.location.href = "/login";
     }
 
