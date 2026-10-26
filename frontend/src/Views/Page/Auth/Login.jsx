@@ -48,9 +48,9 @@ const Login = () => {
             </h2>
 
             {/* SUBTITLE */}
-            {/* <p className="mt-2 text-[14px] leading-6 text-[#617794] sm:text-[15px] landscape:mt-1 landscape:text-[13px]">
+            <p className="mt-2 text-[14px] leading-6 text-[#617794] sm:text-[15px] landscape:mt-1 landscape:text-[13px]">
                 Access your role’s dashboard.
-            </p> */}
+            </p>
 
             {/* ERROR */}
             {error && (
