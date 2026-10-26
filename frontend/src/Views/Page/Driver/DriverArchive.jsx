@@ -11,9 +11,8 @@ import {
   ExclamationTriangleIcon,
   ClockIcon,
   ArchiveBoxIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
   ArrowPathIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 
 const DriverArchive = () => {
@@ -21,7 +20,16 @@ const DriverArchive = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
-  const [expandedId, setExpandedId] = useState(null);
+
+  // =========================================================
+  // MODAL
+  // =========================================================
+
+  const [selectedDelivery, setSelectedDelivery] =
+    useState(null);
+
+  const [showDetailsModal, setShowDetailsModal] =
+    useState(false);
 
   // =========================================================
   // COMPLETED DELIVERY STATUS FLOW
@@ -51,7 +59,11 @@ const DriverArchive = () => {
   // =========================================================
 
   const getStatusLabel = (status) => {
-    return statusLabels[status] || status || "Unknown";
+    return (
+      statusLabels[status] ||
+      status ||
+      "Unknown"
+    );
   };
 
   const getStatusBadgeClass = (status) => {
@@ -82,6 +94,10 @@ const DriverArchive = () => {
     }
   };
 
+  // =========================================================
+  // DATE FORMAT
+  // =========================================================
+
   const formatDate = (date) => {
     if (!date) {
       return "N/A";
@@ -99,6 +115,10 @@ const DriverArchive = () => {
       day: "numeric",
     });
   };
+
+  // =========================================================
+  // DATE + TIME FORMAT
+  // =========================================================
 
   const formatDateTime = (date) => {
     if (!date) {
@@ -122,6 +142,29 @@ const DriverArchive = () => {
   };
 
   // =========================================================
+  // TIME ONLY
+  // =========================================================
+
+  const formatTime = (date) => {
+    if (!date) {
+      return "N/A";
+    }
+
+    const parsedDate = new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return "N/A";
+    }
+
+    return parsedDate.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    });
+  };
+
+  // =========================================================
   // STATUS HISTORY
   // =========================================================
 
@@ -136,15 +179,27 @@ const DriverArchive = () => {
       : [];
   };
 
+  // =========================================================
+  // SORT STATUS HISTORY
+  // =========================================================
+
   const getSortedStatusHistories = (delivery) => {
     return getStatusHistories(delivery)
       .slice()
       .sort(
         (a, b) =>
-          new Date(a.changed_at || 0) -
-          new Date(b.changed_at || 0)
+          new Date(
+            a.changed_at || 0
+          ) -
+          new Date(
+            b.changed_at || 0
+          )
       );
   };
+
+  // =========================================================
+  // GET DELIVERED HISTORY
+  // =========================================================
 
   const getDeliveredHistory = (delivery) => {
     const histories =
@@ -153,12 +208,17 @@ const DriverArchive = () => {
     return histories
       .filter(
         (history) =>
-          history?.status === "delivered"
+          history?.status ===
+          "delivered"
       )
       .sort(
         (a, b) =>
-          new Date(b.changed_at || 0) -
-          new Date(a.changed_at || 0)
+          new Date(
+            b.changed_at || 0
+          ) -
+          new Date(
+            a.changed_at || 0
+          )
       )[0];
   };
 
@@ -179,7 +239,9 @@ const DriverArchive = () => {
   // FETCH ARCHIVE
   // =========================================================
 
-  const fetchArchive = async (isRefresh = false) => {
+  const fetchArchive = async (
+    isRefresh = false
+  ) => {
     try {
       if (isRefresh) {
         setRefreshing(true);
@@ -199,14 +261,14 @@ const DriverArchive = () => {
         response.data ||
         [];
 
-      /*
-      |--------------------------------------------------------------------------
-      | FRONTEND SAFETY CHECK
-      |--------------------------------------------------------------------------
-      */
+      // =====================================================
+      // FRONTEND SAFETY CHECK
+      // =====================================================
 
       const completedDeliveries =
-        Array.isArray(archivedDeliveries)
+        Array.isArray(
+          archivedDeliveries
+        )
           ? archivedDeliveries.filter(
               (delivery) =>
                 delivery?.status ===
@@ -218,25 +280,30 @@ const DriverArchive = () => {
         completedDeliveries
       );
 
-      /*
-      |--------------------------------------------------------------------------
-      | REMOVE INVALID EXPANDED DELIVERY
-      |--------------------------------------------------------------------------
-      */
+      // =====================================================
+      // CLOSE MODAL IF SELECTED DELIVERY NO LONGER EXISTS
+      // =====================================================
 
-      setExpandedId((previous) => {
-        if (
-          previous &&
-          !completedDeliveries.some(
-            (delivery) =>
-              delivery.id === previous
-          )
-        ) {
-          return null;
+      setSelectedDelivery(
+        (previous) => {
+          if (
+            previous &&
+            !completedDeliveries.some(
+              (delivery) =>
+                delivery.id ===
+                previous.id
+            )
+          ) {
+            setShowDetailsModal(
+              false
+            );
+
+            return null;
+          }
+
+          return previous;
         }
-
-        return previous;
-      });
+      );
     } catch (error) {
       console.error(
         "Failed to fetch archived deliveries:",
@@ -244,7 +311,8 @@ const DriverArchive = () => {
       );
 
       setError(
-        error.response?.data?.message ||
+        error.response?.data
+          ?.message ||
           "Failed to load your delivery archive."
       );
     } finally {
@@ -270,16 +338,73 @@ const DriverArchive = () => {
   };
 
   // =========================================================
-  // EXPAND / COLLAPSE
+  // OPEN DETAILS MODAL
   // =========================================================
 
-  const toggleDetails = (deliveryId) => {
-    setExpandedId((previous) =>
-      previous === deliveryId
-        ? null
-        : deliveryId
-    );
+  const openDetailsModal = (
+    delivery
+  ) => {
+    setSelectedDelivery(delivery);
+    setShowDetailsModal(true);
   };
+
+  // =========================================================
+  // CLOSE DETAILS MODAL
+  // =========================================================
+
+  const closeDetailsModal = () => {
+    setShowDetailsModal(false);
+
+    setTimeout(() => {
+      setSelectedDelivery(null);
+    }, 200);
+  };
+
+  // =========================================================
+  // CLOSE MODAL WITH ESCAPE
+  // =========================================================
+
+  useEffect(() => {
+    const handleEscape = (event) => {
+      if (
+        event.key === "Escape" &&
+        showDetailsModal
+      ) {
+        closeDetailsModal();
+      }
+    };
+
+    document.addEventListener(
+      "keydown",
+      handleEscape
+    );
+
+    return () => {
+      document.removeEventListener(
+        "keydown",
+        handleEscape
+      );
+    };
+  }, [showDetailsModal]);
+
+  // =========================================================
+  // PREVENT BODY SCROLL WHEN MODAL IS OPEN
+  // =========================================================
+
+  useEffect(() => {
+    if (showDetailsModal) {
+      document.body.style.overflow =
+        "hidden";
+    } else {
+      document.body.style.overflow =
+        "";
+    }
+
+    return () => {
+      document.body.style.overflow =
+        "";
+    };
+  }, [showDetailsModal]);
 
   // =========================================================
   // LOADING
@@ -292,7 +417,9 @@ const DriverArchive = () => {
 
           <div className="mb-3 h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-blue-600" />
 
-         <p className="text-sm text-gray-500">Please wait a moment...</p>
+          <p className="text-sm text-gray-500">
+            Please wait a moment...
+          </p>
 
         </div>
       </div>
@@ -300,11 +427,37 @@ const DriverArchive = () => {
   }
 
   // =========================================================
+  // SELECTED DELIVERY DATA
+  // =========================================================
+
+  const selectedDeliveredHistory =
+    selectedDelivery
+      ? getDeliveredHistory(
+          selectedDelivery
+        )
+      : null;
+
+  const selectedDriverInfo =
+    selectedDelivery
+      ? getDriverInfo(
+          selectedDelivery
+        )
+      : null;
+
+  const selectedHistories =
+    selectedDelivery
+      ? getSortedStatusHistories(
+          selectedDelivery
+        )
+      : [];
+
+  // =========================================================
   // PAGE
   // =========================================================
 
   return (
     <div className="min-h-screen bg-gray-50 px-3 py-4 sm:px-5 sm:py-6 lg:px-8 lg:py-8">
+
       <div className="mx-auto w-full max-w-7xl">
 
         {/* =====================================================
@@ -459,40 +612,25 @@ const DriverArchive = () => {
 
           <div className="space-y-4 sm:space-y-6">
 
-            {deliveries.map((delivery) => {
+            {deliveries.map(
+              (delivery) => {
 
-              const deliveredHistory =
-                getDeliveredHistory(
-                  delivery
-                );
+                const deliveredHistory =
+                  getDeliveredHistory(
+                    delivery
+                  );
 
-              const driverInfo =
-                getDriverInfo(
-                  delivery
-                );
+                return (
+                  <div
+                    key={delivery.id}
+                    className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
+                  >
 
-              const isExpanded =
-                expandedId ===
-                delivery.id;
+                    {/* =================================================
+                        DELIVERY HEADER
+                    ================================================== */}
 
-              const histories =
-                getSortedStatusHistories(
-                  delivery
-                );
-
-              return (
-                <div
-                  key={delivery.id}
-                  className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
-                >
-
-                  {/* =================================================
-                      DELIVERY HEADER
-                  ================================================== */}
-
-                  <div className="border-b border-gray-100 px-4 py-4 sm:px-6 sm:py-5">
-
-                    <div className="flex flex-col gap-4">
+                    <div className="border-b border-gray-100 px-4 py-4 sm:px-6 sm:py-5">
 
                       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 
@@ -542,24 +680,16 @@ const DriverArchive = () => {
                         <button
                           type="button"
                           onClick={() =>
-                            toggleDetails(
-                              delivery.id
+                            openDetailsModal(
+                              delivery
                             )
                           }
                           className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700 sm:w-auto"
                         >
 
-                          {isExpanded ? (
-                            <>
-                              <ChevronUpIcon className="h-5 w-5" />
-                              Hide Details
-                            </>
-                          ) : (
-                            <>
-                              <ChevronDownIcon className="h-5 w-5" />
-                              View Details
-                            </>
-                          )}
+                          <TruckIcon className="h-5 w-5" />
+
+                          View Details
 
                         </button>
 
@@ -567,103 +697,132 @@ const DriverArchive = () => {
 
                     </div>
 
-                  </div>
+                    {/* =================================================
+                        DELIVERY INFORMATION
+                    ================================================== */}
 
-                  {/* =================================================
-                      DELIVERY INFORMATION
-                  ================================================== */}
+                    <div className="grid grid-cols-1 gap-3 px-4 py-4 sm:grid-cols-2 sm:gap-4 sm:px-6 sm:py-5 lg:grid-cols-4">
 
-                  <div className="grid grid-cols-1 gap-3 px-4 py-4 sm:grid-cols-2 sm:gap-4 sm:px-6 sm:py-5 lg:grid-cols-4">
+                      {/* CUSTOMER */}
 
-                    {/* CUSTOMER */}
+                      <div className="min-w-0 rounded-xl bg-gray-50 p-3 sm:bg-transparent sm:p-0">
 
-                    <div className="min-w-0 rounded-xl bg-gray-50 p-3 sm:bg-transparent sm:p-0">
+                        <div className="flex items-start gap-3">
 
-                      <div className="flex items-start gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50">
 
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50">
+                            <UserIcon className="h-5 w-5 text-blue-600" />
 
-                          <UserIcon className="h-5 w-5 text-blue-600" />
+                          </div>
 
-                        </div>
+                          <div className="min-w-0">
 
-                        <div className="min-w-0">
+                            <p className="text-xs text-gray-400">
+                              Customer
+                            </p>
 
-                          <p className="text-xs text-gray-400">
-                            Customer
-                          </p>
+                            <p className="mt-1 break-words text-sm font-semibold text-gray-700">
+                              {delivery.recipient_name ||
+                                "N/A"}
+                            </p>
 
-                          <p className="mt-1 break-words text-sm font-semibold text-gray-700">
-                            {delivery.recipient_name ||
-                              "N/A"}
-                          </p>
-
-                        </div>
-
-                      </div>
-
-                    </div>
-
-                    {/* QUANTITY */}
-
-                    <div className="min-w-0 rounded-xl bg-gray-50 p-3 sm:bg-transparent sm:p-0">
-
-                      <div className="flex items-start gap-3">
-
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-purple-50">
-
-                          <CubeIcon className="h-5 w-5 text-purple-600" />
-
-                        </div>
-
-                        <div>
-
-                          <p className="text-xs text-gray-400">
-                            Quantity
-                          </p>
-
-                          <p className="mt-1 text-sm font-semibold text-gray-700">
-                            {delivery.quantity_order ??
-                              "N/A"}
-                          </p>
+                          </div>
 
                         </div>
 
                       </div>
 
-                    </div>
+                      {/* QUANTITY */}
 
-                    {/* DELIVERY DATE */}
+                      <div className="min-w-0 rounded-xl bg-gray-50 p-3 sm:bg-transparent sm:p-0">
 
-                    <div className="min-w-0 rounded-xl bg-gray-50 p-3 sm:bg-transparent sm:p-0">
+                        <div className="flex items-start gap-3">
 
-                      <div className="flex items-start gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-purple-50">
 
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-green-50">
+                            <CubeIcon className="h-5 w-5 text-purple-600" />
 
-                          <CalendarDaysIcon className="h-5 w-5 text-green-600" />
+                          </div>
+
+                          <div>
+
+                            <p className="text-xs text-gray-400">
+                              Quantity
+                            </p>
+
+                            <p className="mt-1 text-sm font-semibold text-gray-700">
+                              {delivery.quantity_order ??
+                                "N/A"}
+                            </p>
+
+                          </div>
 
                         </div>
 
-                        <div className="min-w-0">
+                      </div>
 
-                          <p className="text-xs text-gray-400">
-                            Delivery Date
-                          </p>
+                      {/* DELIVERY DATE */}
 
-                          <p className="mt-1 break-words text-sm font-semibold text-gray-700">
+                      <div className="min-w-0 rounded-xl bg-gray-50 p-3 sm:bg-transparent sm:p-0">
 
-                            {delivery.delivery_date
-                              ? formatDate(
-                                  delivery.delivery_date
-                                )
-                              : deliveredHistory?.changed_at
+                        <div className="flex items-start gap-3">
+
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-green-50">
+
+                            <CalendarDaysIcon className="h-5 w-5 text-green-600" />
+
+                          </div>
+
+                          <div className="min-w-0">
+
+                            <p className="text-xs text-gray-400">
+                              Delivery Date
+                            </p>
+
+                            <p className="mt-1 break-words text-sm font-semibold text-gray-700">
+
+                              {delivery.delivery_date
                                 ? formatDate(
-                                    deliveredHistory.changed_at
+                                    delivery.delivery_date
                                   )
-                                : "N/A"}
+                                : deliveredHistory?.changed_at
+                                  ? formatDate(
+                                      deliveredHistory.changed_at
+                                    )
+                                  : "N/A"}
 
-                          </p>
+                            </p>
+
+                          </div>
+
+                        </div>
+
+                      </div>
+
+                      {/* ADDRESS */}
+
+                      <div className="min-w-0 rounded-xl bg-gray-50 p-3 sm:bg-transparent sm:p-0">
+
+                        <div className="flex items-start gap-3">
+
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-50">
+
+                            <MapPinIcon className="h-5 w-5 text-orange-600" />
+
+                          </div>
+
+                          <div className="min-w-0">
+
+                            <p className="text-xs text-gray-400">
+                              Address
+                            </p>
+
+                            <p className="mt-1 break-words text-sm font-semibold leading-5 text-gray-700">
+                              {delivery.delivery_address ||
+                                "N/A"}
+                            </p>
+
+                          </div>
 
                         </div>
 
@@ -671,126 +830,54 @@ const DriverArchive = () => {
 
                     </div>
 
-                    {/* ADDRESS */}
+                    {/* =================================================
+                        COMPLETED STATUS
+                    ================================================== */}
 
-                    <div className="min-w-0 rounded-xl bg-gray-50 p-3 sm:bg-transparent sm:p-0">
+                    <div className="border-t border-gray-100 px-4 py-5 sm:px-6">
 
-                      <div className="flex items-start gap-3">
-
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-50">
-
-                          <MapPinIcon className="h-5 w-5 text-orange-600" />
-
-                        </div>
+                      <div className="mb-5 flex items-start justify-between gap-4">
 
                         <div className="min-w-0">
 
-                          <p className="text-xs text-gray-400">
-                            Address
+                          <p className="text-sm font-semibold text-gray-700">
+                            Delivery Status
                           </p>
 
-                          <p className="mt-1 break-words text-sm font-semibold leading-5 text-gray-700">
-                            {delivery.delivery_address ||
-                              "N/A"}
+                          <p className="mt-1 max-w-xl text-xs leading-5 text-gray-400">
+                            This delivery has
+                            successfully completed
+                            its route.
                           </p>
 
                         </div>
 
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                  {/* =================================================
-                      COMPLETED STATUS
-                  ================================================== */}
-
-                  <div className="border-t border-gray-100 px-4 py-5 sm:px-6">
-
-                    <div className="mb-5 flex items-start justify-between gap-4">
-
-                      <div className="min-w-0">
-
-                        <p className="text-sm font-semibold text-gray-700">
-                          Delivery Status
-                        </p>
-
-                        <p className="mt-1 max-w-xl text-xs leading-5 text-gray-400">
-                          This delivery has
-                          successfully completed
-                          its route.
-                        </p>
+                        <CheckCircleIcon className="h-6 w-6 shrink-0 text-green-500 sm:h-7 sm:w-7" />
 
                       </div>
 
-                      <CheckCircleIcon className="h-6 w-6 shrink-0 text-green-500 sm:h-7 sm:w-7" />
+                      {/* =================================================
+                          MOBILE STATUS PROGRESS
+                      ================================================== */}
 
-                    </div>
+                      <div className="sm:hidden">
 
-                    {/* =================================================
-                        MOBILE STATUS PROGRESS
-                    ================================================== */}
-
-                    <div className="sm:hidden">
-
-                      <div className="grid grid-cols-2 gap-3">
-
-                        {statuses.map(
-                          (status) => (
-                            <div
-                              key={status}
-                              className="flex items-center gap-2 rounded-xl bg-green-50 px-3 py-2.5"
-                            >
-
-                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-green-400 bg-white">
-
-                                <CheckCircleIcon className="h-4 w-4 text-green-600" />
-
-                              </div>
-
-                              <p className="min-w-0 truncate text-xs font-semibold text-green-700">
-                                {getStatusLabel(
-                                  status
-                                )}
-                              </p>
-
-                            </div>
-                          )
-                        )}
-
-                      </div>
-
-                    </div>
-
-                    {/* =================================================
-                        TABLET / DESKTOP STATUS PROGRESS
-                    ================================================== */}
-
-                    <div className="hidden sm:block">
-
-                      <div className="relative">
-
-                        {/* LINE */}
-
-                        <div className="absolute left-0 right-0 top-4 h-0.5 bg-green-200" />
-
-                        <div className="relative grid grid-cols-6 gap-2">
+                        <div className="grid grid-cols-2 gap-3">
 
                           {statuses.map(
                             (status) => (
                               <div
                                 key={status}
-                                className="relative flex min-w-0 flex-col items-center text-center"
+                                className="flex items-center gap-2 rounded-xl bg-green-50 px-3 py-2.5"
                               >
 
-                                <div className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-green-500 bg-green-50">
+                                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-green-400 bg-white">
 
-                                  <CheckCircleIcon className="h-5 w-5 text-green-600" />
+                                  <CheckCircleIcon className="h-4 w-4 text-green-600" />
 
                                 </div>
 
-                                <p className="mt-2 text-[10px] font-semibold text-green-600 sm:text-[11px]">
+                                <p className="min-w-0 truncate text-xs font-semibold text-green-700">
                                   {getStatusLabel(
                                     status
                                   )}
@@ -804,325 +891,536 @@ const DriverArchive = () => {
 
                       </div>
 
+                      {/* =================================================
+                          TABLET / DESKTOP STATUS PROGRESS
+                      ================================================== */}
+
+                      <div className="hidden sm:block">
+
+                        <div className="relative">
+
+                          <div className="absolute left-0 right-0 top-4 h-0.5 bg-green-200" />
+
+                          <div className="relative grid grid-cols-6 gap-2">
+
+                            {statuses.map(
+                              (status) => (
+                                <div
+                                  key={status}
+                                  className="relative flex min-w-0 flex-col items-center text-center"
+                                >
+
+                                  <div className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-green-500 bg-green-50">
+
+                                    <CheckCircleIcon className="h-5 w-5 text-green-600" />
+
+                                  </div>
+
+                                  <p className="mt-2 text-[10px] font-semibold text-green-600 sm:text-[11px]">
+                                    {getStatusLabel(
+                                      status
+                                    )}
+                                  </p>
+
+                                </div>
+                              )
+                            )}
+
+                          </div>
+
+                        </div>
+
+                      </div>
+
+                    </div>
+
+                  </div>
+                );
+              }
+            )}
+
+          </div>
+        )}
+
+      </div>
+
+      {/* =========================================================
+          DETAILS MODAL
+      ========================================================= */}
+
+      {showDetailsModal &&
+        selectedDelivery && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 backdrop-blur-sm sm:p-5"
+            onMouseDown={(event) => {
+              if (
+                event.target ===
+                event.currentTarget
+              ) {
+                closeDetailsModal();
+              }
+            }}
+          >
+
+            {/* =====================================================
+                MODAL CONTAINER
+            ====================================================== */}
+
+            <div className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-gray-50 shadow-2xl">
+
+              {/* =================================================
+                  MODAL HEADER
+              ================================================== */}
+
+              <div className="shrink-0 border-b border-gray-200 bg-white px-4 py-4 sm:px-6 sm:py-5">
+
+                <div className="flex items-start justify-between gap-4">
+
+                  <div className="min-w-0">
+
+                    <div className="flex flex-wrap items-center gap-2">
+
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-50">
+
+                        <TruckIcon className="h-5 w-5 text-cyan-600" />
+
+                      </div>
+
+                      <div className="min-w-0">
+
+                        <h2 className="text-lg font-bold text-gray-800 sm:text-xl">
+                          Delivery Details
+                        </h2>
+
+                        <p className="mt-0.5 break-all text-xs text-gray-400 sm:text-sm">
+                          D.R. #
+                          {selectedDelivery.dr_number ||
+                            "N/A"}
+                        </p>
+
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={
+                      closeDetailsModal
+                    }
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+                    aria-label="Close details"
+                  >
+
+                    <XMarkIcon className="h-6 w-6" />
+
+                  </button>
+
+                </div>
+
+              </div>
+
+              {/* =================================================
+                  MODAL CONTENT
+              ================================================== */}
+
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
+
+                {/* =================================================
+                    STATUS HEADER
+                ================================================== */}
+
+                <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-green-100 bg-green-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+
+                  <div className="flex items-center gap-3">
+
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white">
+
+                      <CheckCircleIcon className="h-6 w-6 text-green-500" />
+
+                    </div>
+
+                    <div>
+
+                      <p className="text-xs text-green-600">
+                        Delivery Status
+                      </p>
+
+                      <p className="mt-0.5 text-base font-bold text-green-700">
+                        {getStatusLabel(
+                          selectedDelivery.status
+                        )}
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                  <div className="sm:text-right">
+
+                    <p className="text-xs text-green-600">
+                      Delivered At
+                    </p>
+
+                    <p className="mt-0.5 text-sm font-semibold text-green-700">
+
+                      {selectedDeliveredHistory?.changed_at
+                        ? formatDateTime(
+                            selectedDeliveredHistory.changed_at
+                          )
+                        : formatDateTime(
+                            selectedDelivery.updated_at
+                          )}
+
+                    </p>
+
+                  </div>
+
+                </div>
+
+                {/* =================================================
+                    DELIVERY DETAILS + DRIVER
+                ================================================== */}
+
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+
+                  {/* =================================================
+                      DELIVERY DETAILS
+                  ================================================== */}
+
+                  <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
+
+                    <div className="mb-5 flex items-center gap-3">
+
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-cyan-50">
+
+                        <TruckIcon className="h-5 w-5 text-cyan-600" />
+
+                      </div>
+
+                      <div>
+
+                        <h3 className="text-sm font-bold text-gray-800">
+                          Delivery Details
+                        </h3>
+
+                        <p className="text-xs text-gray-400">
+                          Transaction information
+                        </p>
+
+                      </div>
+
+                    </div>
+
+                    <div className="space-y-4">
+
+                      <div>
+                        <p className="text-xs text-gray-400">
+                          D.R. Number
+                        </p>
+
+                        <p className="mt-1 break-all text-sm font-semibold text-gray-700">
+                          {selectedDelivery.dr_number ||
+                            "N/A"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-gray-400">
+                          Customer
+                        </p>
+
+                        <p className="mt-1 break-words text-sm font-semibold text-gray-700">
+                          {selectedDelivery.recipient_name ||
+                            "N/A"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-gray-400">
+                          Quantity Ordered
+                        </p>
+
+                        <p className="mt-1 text-sm font-semibold text-gray-700">
+                          {selectedDelivery.quantity_order ??
+                            "N/A"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-gray-400">
+                          Delivery Address
+                        </p>
+
+                        <p className="mt-1 break-words text-sm font-semibold leading-5 text-gray-700">
+                          {selectedDelivery.delivery_address ||
+                            "N/A"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-gray-400">
+                          Delivery Date
+                        </p>
+
+                        <p className="mt-1 text-sm font-semibold text-gray-700">
+
+                          {selectedDelivery.delivery_date
+                            ? formatDate(
+                                selectedDelivery.delivery_date
+                              )
+                            : "N/A"}
+
+                        </p>
+                      </div>
+
                     </div>
 
                   </div>
 
                   {/* =================================================
-                      EXPANDED DETAILS
+                      DRIVER & TRUCK
                   ================================================== */}
 
-                  {isExpanded && (
+                  <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
 
-                    <div className="border-t border-gray-100 bg-gray-50 px-4 py-4 sm:px-6 sm:py-5">
+                    <div className="mb-5 flex items-center gap-3">
 
-                      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50">
 
-                        {/* =================================================
-                            DELIVERY DETAILS
-                        ================================================== */}
-
-                        <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
-
-                          <div className="mb-5 flex items-center gap-3">
-
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-cyan-50">
-
-                              <TruckIcon className="h-5 w-5 text-cyan-600" />
-
-                            </div>
-
-                            <div className="min-w-0">
-
-                              <h3 className="text-sm font-bold text-gray-800">
-                                Delivery Details
-                              </h3>
-
-                              <p className="text-xs text-gray-400">
-                                Transaction information
-                              </p>
-
-                            </div>
-
-                          </div>
-
-                          <div className="space-y-4">
-
-                            <div>
-                              <p className="text-xs text-gray-400">
-                                D.R. Number
-                              </p>
-
-                              <p className="mt-1 break-all text-sm font-semibold text-gray-700">
-                                {delivery.dr_number ||
-                                  "N/A"}
-                              </p>
-                            </div>
-
-                            <div>
-                              <p className="text-xs text-gray-400">
-                                Customer
-                              </p>
-
-                              <p className="mt-1 break-words text-sm font-semibold text-gray-700">
-                                {delivery.recipient_name ||
-                                  "N/A"}
-                              </p>
-                            </div>
-
-                            <div>
-                              <p className="text-xs text-gray-400">
-                                Quantity Ordered
-                              </p>
-
-                              <p className="mt-1 text-sm font-semibold text-gray-700">
-                                {delivery.quantity_order ??
-                                  "N/A"}
-                              </p>
-                            </div>
-
-                            <div>
-                              <p className="text-xs text-gray-400">
-                                Delivery Address
-                              </p>
-
-                              <p className="mt-1 break-words text-sm font-semibold leading-5 text-gray-700">
-                                {delivery.delivery_address ||
-                                  "N/A"}
-                              </p>
-                            </div>
-
-                            <div>
-                              <p className="text-xs text-gray-400">
-                                Delivered At
-                              </p>
-
-                              <p className="mt-1 break-words text-sm font-semibold text-green-600">
-                                {deliveredHistory?.changed_at
-                                  ? formatDateTime(
-                                      deliveredHistory.changed_at
-                                    )
-                                  : formatDateTime(
-                                      delivery.updated_at
-                                    )}
-                              </p>
-                            </div>
-
-                          </div>
-
-                        </div>
-
-                        {/* =================================================
-                            DRIVER & TRUCK
-                        ================================================== */}
-
-                        <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
-
-                          <div className="mb-5 flex items-center gap-3">
-
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50">
-
-                              <TruckIcon className="h-5 w-5 text-blue-600" />
-
-                            </div>
-
-                            <div className="min-w-0">
-
-                              <h3 className="text-sm font-bold text-gray-800">
-                                Driver & Truck
-                              </h3>
-
-                              <p className="text-xs text-gray-400">
-                                Assigned vehicle information
-                              </p>
-
-                            </div>
-
-                          </div>
-
-                          <div className="space-y-4">
-
-                            <div>
-                              <p className="text-xs text-gray-400">
-                                Driver
-                              </p>
-
-                              <p className="mt-1 break-words text-sm font-semibold text-gray-700">
-                                {delivery?.driver?.username ||
-                                  "N/A"}
-                              </p>
-                            </div>
-
-                            <div>
-                              <p className="text-xs text-gray-400">
-                                Truck Name
-                              </p>
-
-                              <p className="mt-1 break-words text-sm font-semibold text-gray-700">
-                                {driverInfo?.truck_name ||
-                                  "N/A"}
-                              </p>
-                            </div>
-
-                            <div>
-                              <p className="text-xs text-gray-400">
-                                Plate Number
-                              </p>
-
-                              <p className="mt-1 break-all text-sm font-semibold text-gray-700">
-                                {driverInfo?.truck_plate_number ||
-                                  "N/A"}
-                              </p>
-                            </div>
-
-                            <div>
-                              <p className="text-xs text-gray-400">
-                                Completed Date
-                              </p>
-
-                              <p className="mt-1 text-sm font-semibold text-green-600">
-                                {deliveredHistory?.changed_at
-                                  ? formatDate(
-                                      deliveredHistory.changed_at
-                                    )
-                                  : formatDate(
-                                      delivery.updated_at
-                                    )}
-                              </p>
-                            </div>
-
-                          </div>
-
-                        </div>
+                        <TruckIcon className="h-5 w-5 text-blue-600" />
 
                       </div>
 
-                      {/* =================================================
-                          DELIVERY TIMELINE
-                      ================================================== */}
+                      <div>
 
-                      <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-4 sm:mt-5 sm:p-5">
+                        <h3 className="text-sm font-bold text-gray-800">
+                          Driver & Truck
+                        </h3>
 
-                        <div className="mb-5 flex items-center gap-3">
-
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-purple-50">
-
-                            <ClockIcon className="h-5 w-5 text-purple-600" />
-
-                          </div>
-
-                          <div className="min-w-0">
-
-                            <h3 className="text-sm font-bold text-gray-800">
-                              Delivery Timeline
-                            </h3>
-
-                            <p className="text-xs text-gray-400">
-                              Complete delivery status history
-                            </p>
-
-                          </div>
-
-                        </div>
-
-                        {histories.length === 0 ? (
-
-                          <div className="rounded-xl bg-gray-50 p-5 text-center">
-
-                            <p className="text-sm text-gray-400">
-                              No status history
-                              available.
-                            </p>
-
-                          </div>
-
-                        ) : (
-
-                          <div className="space-y-0">
-
-                            {histories.map(
-                              (
-                                history,
-                                index
-                              ) => {
-
-                                const isLast =
-                                  index ===
-                                  histories.length -
-                                    1;
-
-                                return (
-                                  <div
-                                    key={
-                                      history.id ||
-                                      `${history.status}-${index}`
-                                    }
-                                    className="relative flex gap-3 sm:gap-4"
-                                  >
-
-                                    {/* CONNECTING LINE */}
-
-                                    {!isLast && (
-                                      <div className="absolute left-[11px] top-7 h-full w-px bg-gray-200" />
-                                    )}
-
-                                    {/* DOT */}
-
-                                    <div className="relative z-10 mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-50">
-
-                                      <div className="h-2.5 w-2.5 rounded-full bg-green-500" />
-
-                                    </div>
-
-                                    {/* CONTENT */}
-
-                                    <div className="min-w-0 flex-1 pb-6">
-
-                                      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-
-                                        <p className="break-words text-sm font-semibold text-gray-700">
-                                          {getStatusLabel(
-                                            history.status
-                                          )}
-                                        </p>
-
-                                        <p className="shrink-0 text-xs text-gray-400">
-                                          {formatDateTime(
-                                            history.changed_at
-                                          )}
-                                        </p>
-
-                                      </div>
-
-                                    </div>
-
-                                  </div>
-                                );
-                              }
-                            )}
-
-                          </div>
-                        )}
+                        <p className="text-xs text-gray-400">
+                          Assigned vehicle information
+                        </p>
 
                       </div>
 
                     </div>
+
+                    <div className="space-y-4">
+
+                      <div>
+                        <p className="text-xs text-gray-400">
+                          Driver
+                        </p>
+
+                        <p className="mt-1 break-words text-sm font-semibold text-gray-700">
+                          {selectedDelivery
+                            ?.driver
+                            ?.username ||
+                            "N/A"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-gray-400">
+                          Truck Name
+                        </p>
+
+                        <p className="mt-1 break-words text-sm font-semibold text-gray-700">
+                          {selectedDriverInfo?.truck_name ||
+                            "N/A"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-gray-400">
+                          Plate Number
+                        </p>
+
+                        <p className="mt-1 break-all text-sm font-semibold text-gray-700">
+                          {selectedDriverInfo?.truck_plate_number ||
+                            "N/A"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-gray-400">
+                          Completed Date
+                        </p>
+
+                        <p className="mt-1 text-sm font-semibold text-green-600">
+
+                          {selectedDeliveredHistory?.changed_at
+                            ? formatDate(
+                                selectedDeliveredHistory.changed_at
+                              )
+                            : formatDate(
+                                selectedDelivery.updated_at
+                              )}
+
+                        </p>
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+                {/* =================================================
+                    DELIVERY TIMELINE
+                ================================================== */}
+
+                <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-4 sm:mt-5 sm:p-5">
+
+                  <div className="mb-5 flex items-center gap-3">
+
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-purple-50">
+
+                      <ClockIcon className="h-5 w-5 text-purple-600" />
+
+                    </div>
+
+                    <div>
+
+                      <h3 className="text-sm font-bold text-gray-800">
+                        Delivery Timeline
+                      </h3>
+
+                      <p className="text-xs text-gray-400">
+                        Complete delivery status history
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                  {selectedHistories.length ===
+                  0 ? (
+
+                    <div className="rounded-xl bg-gray-50 p-5 text-center">
+
+                      <ClockIcon className="mx-auto h-8 w-8 text-gray-300" />
+
+                      <p className="mt-2 text-sm text-gray-400">
+                        No status history
+                        available.
+                      </p>
+
+                    </div>
+
+                  ) : (
+
+                    <div className="space-y-0">
+
+                      {selectedHistories.map(
+                        (
+                          history,
+                          index
+                        ) => {
+
+                          const isLast =
+                            index ===
+                            selectedHistories.length -
+                              1;
+
+                          const timestamp =
+                            history?.changed_at ||
+                            history?.created_at ||
+                            history?.updated_at;
+
+                          return (
+                            <div
+                              key={
+                                history.id ||
+                                `${history.status}-${index}`
+                              }
+                              className="relative flex gap-3 sm:gap-4"
+                            >
+
+                              {/* CONNECTING LINE */}
+
+                              {!isLast && (
+                                <div className="absolute left-[11px] top-7 h-full w-px bg-green-200" />
+                              )}
+
+                              {/* DOT */}
+
+                              <div className="relative z-10 mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-50">
+
+                                <div className="h-2.5 w-2.5 rounded-full bg-green-500" />
+
+                              </div>
+
+                              {/* CONTENT */}
+
+                              <div className="min-w-0 flex-1 pb-6">
+
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+
+                                  <div className="min-w-0">
+
+                                    <p className="break-words text-sm font-semibold text-gray-700">
+                                      {getStatusLabel(
+                                        history.status
+                                      )}
+                                    </p>
+
+                                  </div>
+
+                                  <div className="shrink-0 sm:text-right">
+
+                                    {timestamp ? (
+                                      <>
+                                        <p className="text-xs font-semibold text-blue-600">
+                                          {formatTime(
+                                            timestamp
+                                          )}
+                                        </p>
+
+                                        <p className="mt-0.5 text-[11px] text-gray-400">
+                                          {formatDate(
+                                            timestamp
+                                          )}
+                                        </p>
+                                      </>
+                                    ) : (
+                                      <p className="text-xs text-gray-400">
+                                        Time not recorded
+                                      </p>
+                                    )}
+
+                                  </div>
+
+                                </div>
+
+                              </div>
+
+                            </div>
+                          );
+                        }
+                      )}
+
+                    </div>
+
                   )}
 
                 </div>
-              );
-            })}
+
+              </div>
+
+              {/* =================================================
+                  MODAL FOOTER
+              ================================================== */}
+
+              
+
+            </div>
 
           </div>
         )}
 
-        {/* =====================================================
-            FOOTER
-        ====================================================== */}
-
-        
-
-      </div>
     </div>
   );
 };

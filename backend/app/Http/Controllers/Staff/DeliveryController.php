@@ -43,6 +43,8 @@ class DeliveryController extends Controller
         return [
             'creator',
             'driver.driverInfo',
+            'statusHistories',
+            'incidentReports',
         ];
     }
 
@@ -72,7 +74,7 @@ class DeliveryController extends Controller
             ->get();
 
         return response()->json([
-            'message' => 'Deliveries retrieved successfully.',
+            'message' => 'Deliveries retrieved successfully....',
             'deliveries' => $deliveries,
         ]);
     }

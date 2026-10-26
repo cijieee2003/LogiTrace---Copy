@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\IncidentReport;
 
 class Delivery extends Model
 {
@@ -57,7 +56,21 @@ class Delivery extends Model
 
     /*
     |--------------------------------------------------------------------------
-    | INCIDENTS
+    | DRIVER STATUS HISTORY
+    |--------------------------------------------------------------------------
+    */
+
+    public function statusHistories(): HasMany
+    {
+        return $this->hasMany(
+            DeliveryStatusHistory::class,
+            'delivery_id'
+        )->orderBy('changed_at', 'asc');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | INCIDENT REPORTS
     |--------------------------------------------------------------------------
     */
 
@@ -69,25 +82,12 @@ class Delivery extends Model
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | STATUS HISTORY
-    |--------------------------------------------------------------------------
-    */
 
-    public function statusHistories(): HasMany
-    {
-        return $this->hasMany(
-            DeliveryStatusHistory::class,
-            'delivery_id'
-        )->orderBy('changed_at');
-    }
-
-    public function incidentReports()
-{
-    return $this->hasMany(
-        IncidentReport::class,
-        'delivery_id'
-    );
-}
+  public function incidentReports(): HasMany
+  {
+      return $this->hasMany(
+          IncidentReport::class,
+          'delivery_id'
+      );
+  }
 }
