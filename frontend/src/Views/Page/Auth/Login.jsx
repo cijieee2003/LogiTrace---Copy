@@ -1,18 +1,24 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff, XCircle, AlertCircle } from "lucide-react";
 import { useStateContext } from "../../../context/AuthProvider";
 import SpinnerButton from "../../Components/SpinnerButton";
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [showPopup, setShowPopup] = useState(false);
 
   const { login, btnLoading } = useStateContext();
+  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
+    setShowPopup(false);
 
     if (!username.trim() || !password) {
       setError("Please enter your username and password.");
@@ -20,36 +26,44 @@ const Login = () => {
     }
 
     try {
-      await login({
+      const success = await login({
         username: username.trim(),
         password,
       });
 
-      // Add your existing dashboard navigation here
-      // if your app does not already handle navigation elsewhere.
+      if (success) {
+        navigate("/dashboard");
+      } else {
+        setError("Your password is wrong.");
+        setShowPopup(true);
+      }
     } catch (error) {
       console.error("Login error:", error);
 
       const status = error.response?.status;
+      const responseData = error.response?.data;
 
-      if (status === 404) {
+      if (status === 401 || status === 422) {
         setError(
-          "Login endpoint not found. Please check the API URL and deployed Laravel routes."
+          status === 422 &&
+          responseData?.errors?.username?.[0]
+            ? responseData.errors.username[0]
+            : "Your password is wrong."
         );
-      } else if (status === 401) {
-        setError("Invalid username or password.");
-      } else if (status === 422) {
+        setShowPopup(true);
+      } else if (status === 404) {
         setError(
-          error.response?.data?.errors?.username?.[0] ||
-          error.response?.data?.message ||
-          "Please check your login details."
+          "Login endpoint not found. Please check your API URL and Laravel routes."
         );
+        setShowPopup(true);
+      } else if (!error.response) {
+        setError("Unable to connect to the server. Please try again.");
+        setShowPopup(true);
       } else {
         setError(
-          error.response?.data?.message ||
-          error.message ||
-          "Unable to log in. Please try again."
+          responseData?.message || "Unable to log in. Please try again."
         );
+        setShowPopup(true);
       }
     }
   };
@@ -64,7 +78,7 @@ const Login = () => {
         Access your role’s dashboard.
       </p>
 
-      {error && (
+      {error && !showPopup && (
         <div
           role="alert"
           className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3"
@@ -107,18 +121,38 @@ const Login = () => {
             Password
           </label>
 
-          <input
-            id="password"
-            name="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter your password"
-            autoComplete="current-password"
-            disabled={btnLoading}
-            className="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:opacity-60"
-            required
-          />
+          <div className="relative">
+            <input
+              id="password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError("");
+                setShowPopup(false);
+              }}
+              placeholder="Enter your password"
+              autoComplete="current-password"
+              disabled={btnLoading}
+              className="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2.5 pr-11 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:opacity-60"
+              required
+            />
+
+            <button
+              type="button"
+              onClick={() => setShowPassword((previous) => !previous)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-pressed={showPassword}
+              className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-800 focus:outline-none"
+            >
+              {showPassword ? (
+                <EyeOff size={20} />
+              ) : (
+                <Eye size={20} />
+              )}
+            </button>
+          </div>
         </div>
 
         <button
@@ -139,12 +173,50 @@ const Login = () => {
 
       <div className="mt-20 sm:mt-24 landscape:mt-5 lg:mt-32">
         <p className="font-serif text-[11px] leading-5 text-[#d6b875] sm:text-[13px] sm:leading-6 landscape:text-[9px] landscape:leading-4 lg:text-[15px]">
-          Copyright © Designed &amp; Developed by
-          {" "}Goulart C. Cainhog Jr.
+          Copyright © Designed &amp; Developed by{" "}
+          Goulart C. Cainhog Jr.
           <br />
           MITO Student in USTP-CDO
         </p>
       </div>
+
+      {/* Login error popup */}
+      {showPopup && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="presentation"
+          onClick={() => setShowPopup(false)}
+        >
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="login-error-title"
+            className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
+              <XCircle size={32} className="text-red-600" />
+            </div>
+
+            <h3
+              id="login-error-title"
+              className="text-xl font-bold text-gray-900"
+            >
+              Login Failed
+            </h3>
+
+            <p className="mt-2 text-sm text-gray-600">{error}</p>
+
+            <button
+              type="button"
+              onClick={() => setShowPopup(false)}
+              className="mt-6 w-full rounded-lg bg-[#f5a623] px-4 py-3 font-semibold text-gray-900 transition hover:bg-[#efa01c]"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
