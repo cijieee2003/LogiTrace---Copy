@@ -1,3 +1,4 @@
+
 import {
   createContext,
   useContext,
@@ -23,11 +24,11 @@ export const AuthProvider = ({ children }) => {
   |--------------------------------------------------------------------------
   */
 
-  const setToken = (token) => {
-    _setToken(token);
+  const setToken = (newToken) => {
+    _setToken(newToken);
 
-    if (token) {
-      localStorage.setItem("token", token);
+    if (newToken) {
+      localStorage.setItem("token", newToken);
     } else {
       localStorage.removeItem("token");
     }
@@ -47,11 +48,14 @@ export const AuthProvider = ({ children }) => {
 
       return data;
     } catch (error) {
-      console.error("Failed to get user:", error);
+      console.error("Failed to get user:", {
+        status: error.response?.status,
+        response: error.response?.data,
+        message: error.message,
+      });
 
-      // Token is invalid or expired
-      setToken(null);
       setUser({});
+      setToken(null);
 
       return null;
     } finally {
@@ -63,12 +67,6 @@ export const AuthProvider = ({ children }) => {
   |--------------------------------------------------------------------------
   | REFRESH USER
   |--------------------------------------------------------------------------
-  |
-  | Used after the driver:
-  |
-  | 1. Completes their profile
-  | 2. Changes their password
-  |
   */
 
   const refreshUser = async () => {
@@ -79,7 +77,11 @@ export const AuthProvider = ({ children }) => {
 
       return data;
     } catch (error) {
-      console.error("Failed to refresh user:", error);
+      console.error("Failed to refresh user:", {
+        status: error.response?.status,
+        response: error.response?.data,
+        message: error.message,
+      });
 
       return null;
     }
@@ -91,39 +93,45 @@ export const AuthProvider = ({ children }) => {
   |--------------------------------------------------------------------------
   */
 
-  const login = async (data) => {
+  const login = async (credentials) => {
     setBtnLoading(true);
 
     try {
       const response = await axiosClient.post(
         "/login",
-        data
+        credentials
       );
 
-      const newToken = response.data.token;
+      const newToken = response.data?.token;
 
-      // Save token
+      if (!newToken) {
+        throw new Error(
+          "Login response does not contain an authentication token."
+        );
+      }
+
+      // Save token before requesting the authenticated user.
       setToken(newToken);
 
-      /*
-      |--------------------------------------------------------------------------
-      | Get Fresh User Information
-      |--------------------------------------------------------------------------
-      |
-      | This gets:
-      |
-      | profile_completed
-      | password_changed
-      |
-      */
+      const { data } = await axiosClient.get("/user");
 
-      await getUser();
+      setUser(data);
 
       return true;
     } catch (error) {
-      console.error("Login failed:", error);
+      console.error("Login failed:", {
+        url: error.config?.baseURL
+          ? `${error.config.baseURL}${error.config.url || ""}`
+          : error.config?.url,
+        status: error.response?.status,
+        response: error.response?.data,
+        message: error.message,
+      });
 
-      return false;
+      setToken(null);
+      setUser({});
+
+      throw error;
     } finally {
       setBtnLoading(false);
     }
@@ -139,12 +147,12 @@ export const AuthProvider = ({ children }) => {
     try {
       await axiosClient.post("/logout");
     } catch (error) {
-      console.error(
-        "Logout request failed:",
-        error
-      );
+      console.error("Logout request failed:", {
+        status: error.response?.status,
+        response: error.response?.data,
+        message: error.message,
+      });
     } finally {
-      // Clear authentication even if API request fails
       setToken(null);
       setUser({});
     }
@@ -179,12 +187,8 @@ export const AuthProvider = ({ children }) => {
         token,
         loading,
         btnLoading,
-
-        // Authentication
         login,
         logout,
-
-        // Refresh authenticated user
         refreshUser,
       }}
     >
