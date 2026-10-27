@@ -16,21 +16,15 @@ return [
     */
 'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
-    'allowed_methods' => ['*'],
+'allowed_methods' => ['*'],
 
-    'allowed_origins' => [
-        'https://logitraceph.com',
-        'https://www.logitraceph.com',
-    ],
+'allowed_origins' => [
+    'https://logitraceph.com',
+    'https://www.logitraceph.com',
+],
 
-    'allowed_origins_patterns' => [],
+'allowed_headers' => ['*'],
 
-    'allowed_headers' => ['*'],
-
-    'exposed_headers' => [],
-
-    'max_age' => 0,
-
-    'supports_credentials' => false
+'supports_credentials' => false,
 
 ];
