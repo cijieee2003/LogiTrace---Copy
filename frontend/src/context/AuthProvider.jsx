@@ -17,7 +17,12 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [btnLoading, setBtnLoading] = useState(false);
 
-  // Save or remove token
+  /*
+  |--------------------------------------------------------------------------
+  | SAVE OR REMOVE TOKEN
+  |--------------------------------------------------------------------------
+  */
+
   const setToken = (token) => {
     _setToken(token);
 
@@ -28,36 +33,90 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Get authenticated user
+  /*
+  |--------------------------------------------------------------------------
+  | GET AUTHENTICATED USER
+  |--------------------------------------------------------------------------
+  */
+
   const getUser = async () => {
     try {
       const { data } = await axiosClient.get("/user");
 
       setUser(data);
+
+      return data;
     } catch (error) {
       console.error("Failed to get user:", error);
 
       // Token is invalid or expired
       setToken(null);
       setUser({});
+
+      return null;
     } finally {
       setLoading(false);
     }
   };
 
-  // Login
+  /*
+  |--------------------------------------------------------------------------
+  | REFRESH USER
+  |--------------------------------------------------------------------------
+  |
+  | Used after the driver:
+  |
+  | 1. Completes their profile
+  | 2. Changes their password
+  |
+  */
+
+  const refreshUser = async () => {
+    try {
+      const { data } = await axiosClient.get("/user");
+
+      setUser(data);
+
+      return data;
+    } catch (error) {
+      console.error("Failed to refresh user:", error);
+
+      return null;
+    }
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | LOGIN
+  |--------------------------------------------------------------------------
+  */
+
   const login = async (data) => {
     setBtnLoading(true);
 
     try {
-      const response = await axiosClient.post("/login", data);
+      const response = await axiosClient.post(
+        "/login",
+        data
+      );
 
       const newToken = response.data.token;
 
       // Save token
       setToken(newToken);
 
-      // Get user information
+      /*
+      |--------------------------------------------------------------------------
+      | Get Fresh User Information
+      |--------------------------------------------------------------------------
+      |
+      | This gets:
+      |
+      | profile_completed
+      | password_changed
+      |
+      */
+
       await getUser();
 
       return true;
@@ -70,12 +129,20 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Logout
+  /*
+  |--------------------------------------------------------------------------
+  | LOGOUT
+  |--------------------------------------------------------------------------
+  */
+
   const logout = async () => {
     try {
       await axiosClient.post("/logout");
     } catch (error) {
-      console.error("Logout request failed:", error);
+      console.error(
+        "Logout request failed:",
+        error
+      );
     } finally {
       // Clear authentication even if API request fails
       setToken(null);
@@ -83,7 +150,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Check authentication when app starts
+  /*
+  |--------------------------------------------------------------------------
+  | CHECK AUTHENTICATION WHEN APP STARTS
+  |--------------------------------------------------------------------------
+  */
+
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
 
@@ -94,6 +166,12 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  /*
+  |--------------------------------------------------------------------------
+  | AUTH CONTEXT
+  |--------------------------------------------------------------------------
+  */
+
   return (
     <stateContext.Provider
       value={{
@@ -101,8 +179,13 @@ export const AuthProvider = ({ children }) => {
         token,
         loading,
         btnLoading,
+
+        // Authentication
         login,
         logout,
+
+        // Refresh authenticated user
+        refreshUser,
       }}
     >
       {children}
@@ -110,7 +193,12 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-// Custom authentication hook
+/*
+|--------------------------------------------------------------------------
+| CUSTOM AUTHENTICATION HOOK
+|--------------------------------------------------------------------------
+*/
+
 export const useStateContext = () => {
   const context = useContext(stateContext);
 
