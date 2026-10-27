@@ -2,6 +2,7 @@
 import axios from "axios";
 
 const axiosClient = axios.create({
+  // Example: https://api.logitraceph.com/api
   baseURL: import.meta.env.VITE_API_URL,
   headers: {
     Accept: "application/json",
@@ -9,13 +10,12 @@ const axiosClient = axios.create({
   },
 });
 
-// Add the authentication token to requests.
+// Attach the Sanctum bearer token to requests.
 axiosClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
 
     if (token) {
-      config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
     }
 
@@ -29,6 +29,7 @@ axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      // Remove an expired or invalid token.
       localStorage.removeItem("token");
     }
 

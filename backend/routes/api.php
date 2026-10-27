@@ -125,7 +125,7 @@ Route::middleware('auth:sanctum')->group(function () {
         'user'
     ]);
 
-    Route::post('/logout', [
+    Route::get('/logout', [
         AuthController::class,
         'logout'
     ]);

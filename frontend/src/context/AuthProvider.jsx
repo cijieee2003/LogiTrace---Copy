@@ -1,127 +1,86 @@
+
 import {
   createContext,
   useContext,
   useEffect,
   useState,
+  useCallback,
 } from "react";
-
 import axiosClient from "../api/axiosClient";
 
 const stateContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState({});
-  const [token, _setToken] = useState(
-    localStorage.getItem("token")
+  const [user, setUser] = useState(null);
+  const [token, setTokenState] = useState(
+    () => localStorage.getItem("token")
   );
   const [loading, setLoading] = useState(true);
   const [btnLoading, setBtnLoading] = useState(false);
 
-  /*
-  |--------------------------------------------------------------------------
-  | SAVE OR REMOVE TOKEN
-  |--------------------------------------------------------------------------
-  */
-
-  const setToken = (token) => {
-    _setToken(token);
-
-    if (token) {
-      localStorage.setItem("token", token);
+  // Save or remove the authentication token.
+  const setToken = (newToken) => {
+    if (newToken) {
+      localStorage.setItem("token", newToken);
     } else {
       localStorage.removeItem("token");
     }
+
+    setTokenState(newToken);
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | GET AUTHENTICATED USER
-  |--------------------------------------------------------------------------
-  */
-
-  const getUser = async () => {
+  // Get the currently authenticated user.
+  const getUser = useCallback(async () => {
     try {
       const { data } = await axiosClient.get("/user");
-
-      setUser(data);
-
-      return data;
+      setUser(data.user ?? data);
+      return true;
     } catch (error) {
       console.error("Failed to get user:", error);
 
-      // Token is invalid or expired
-      setToken(null);
-      setUser({});
+      // Clear authentication only when the token is invalid.
+      if (
+        error.response?.status === 401 ||
+        error.response?.status === 403
+      ) {
+        setToken(null);
+        setUser(null);
+      }
 
-      return null;
-    } finally {
-      setLoading(false);
+      return false;
     }
-  };
+  }, []);
 
-  /*
-  |--------------------------------------------------------------------------
-  | REFRESH USER
-  |--------------------------------------------------------------------------
-  |
-  | Used after the driver:
-  |
-  | 1. Completes their profile
-  | 2. Changes their password
-  |
-  */
-
-  const refreshUser = async () => {
-    try {
-      const { data } = await axiosClient.get("/user");
-
-      setUser(data);
-
-      return data;
-    } catch (error) {
-      console.error("Failed to refresh user:", error);
-
-      return null;
-    }
-  };
-
-  /*
-  |--------------------------------------------------------------------------
-  | LOGIN
-  |--------------------------------------------------------------------------
-  */
-
-  const login = async (data) => {
+  // Log in using the credentials returned by the login form.
+  const login = async (credentials) => {
     setBtnLoading(true);
 
     try {
-      const response = await axiosClient.post(
-        "/login",
-        data
-      );
+      const { data } = await axiosClient.post("/login", {
+        username: credentials.username,
+        password: credentials.password,
+      });
 
-      const newToken = response.data.token;
+      if (!data.token) {
+        console.error("Login response did not contain a token.");
+        return false;
+      }
 
-      // Save token
-      setToken(newToken);
+      setToken(data.token);
 
-      /*
-      |--------------------------------------------------------------------------
-      | Get Fresh User Information
-      |--------------------------------------------------------------------------
-      |
-      | This gets:
-      |
-      | profile_completed
-      | password_changed
-      |
-      */
-
-      await getUser();
+      // Your Laravel AuthController already returns the user.
+      if (data.user) {
+        setUser(data.user);
+      } else {
+        await getUser();
+      }
 
       return true;
     } catch (error) {
-      console.error("Login failed:", error);
+      console.error(
+        "Login failed:",
+        error.response?.data ?? error.message
+      );
 
       return false;
     } finally {
@@ -129,48 +88,37 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | LOGOUT
-  |--------------------------------------------------------------------------
-  */
-
+  // Log out the authenticated user.
   const logout = async () => {
     try {
-      await axiosClient.post("/logout");
+      if (token) {
+        await axiosClient.post("/logout");
+      }
     } catch (error) {
       console.error(
         "Logout request failed:",
-        error
+        error.response?.data ?? error.message
       );
     } finally {
-      // Clear authentication even if API request fails
       setToken(null);
-      setUser({});
+      setUser(null);
     }
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | CHECK AUTHENTICATION WHEN APP STARTS
-  |--------------------------------------------------------------------------
-  */
-
+  // Restore the session after refreshing the page.
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
+    const restoreSession = async () => {
+      const storedToken = localStorage.getItem("token");
 
-    if (storedToken) {
-      getUser();
-    } else {
+      if (storedToken) {
+        await getUser();
+      }
+
       setLoading(false);
-    }
-  }, []);
+    };
 
-  /*
-  |--------------------------------------------------------------------------
-  | AUTH CONTEXT
-  |--------------------------------------------------------------------------
-  */
+    restoreSession();
+  }, [getUser]);
 
   return (
     <stateContext.Provider
@@ -179,25 +127,15 @@ export const AuthProvider = ({ children }) => {
         token,
         loading,
         btnLoading,
-
-        // Authentication
         login,
         logout,
-
-        // Refresh authenticated user
-        refreshUser,
+        getUser,
       }}
     >
       {children}
     </stateContext.Provider>
   );
 };
-
-/*
-|--------------------------------------------------------------------------
-| CUSTOM AUTHENTICATION HOOK
-|--------------------------------------------------------------------------
-*/
 
 export const useStateContext = () => {
   const context = useContext(stateContext);
