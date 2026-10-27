@@ -3,80 +3,59 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
     /**
-     * Login
+     * POST /api/login
      */
     public function login(Request $request)
     {
-        $request->validate([
-            'username' => ['required'],
-            'password' => ['required'],
+        $validated = $request->validate([
+            'username' => ['required', 'string'],
+            'password' => ['required', 'string'],
         ]);
 
-        $user = User::where('username', $request->username)->first();
+        $username = trim($validated['username']);
+        $password = $validated['password'];
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        $user = User::where('username', $username)->first();
+
+        if (!$user || !Hash::check($password, $user->password)) {
             throw ValidationException::withMessages([
                 'username' => ['The provided credentials are incorrect.'],
             ]);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Driver Email Verification
-        |--------------------------------------------------------------------------
-        |
-        | Drivers must verify their email before they are allowed to log in.
-        |
-        */
-        if ($user->role === 'driver' && !$user->hasVerifiedEmail()) {
+        // Drivers must verify their email before logging in.
+        if (
+            $user->role === 'driver' &&
+            !$user->hasVerifiedEmail()
+        ) {
             throw ValidationException::withMessages([
-                'email' => ['Please verify your email address before logging in.'],
+                'email' => [
+                    'Please verify your email address before logging in.',
+                ],
             ]);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Create Sanctum Token
-        |--------------------------------------------------------------------------
-        */
-
+        // Create a Sanctum personal access token.
         $token = $user->createToken('token')->plainTextToken;
-
-        /*
-        |--------------------------------------------------------------------------
-        | Login Response
-        |--------------------------------------------------------------------------
-        |
-        | profile_completed:
-        | false = driver must complete their profile
-        |
-        | password_changed:
-        | false = driver must change their temporary password
-        |
-        */
 
         return response()->json([
             'success' => true,
             'message' => 'Login successful.',
             'token' => $token,
-
             'user' => [
                 'id' => $user->id,
                 'username' => $user->username,
                 'email' => $user->email,
                 'role' => $user->role,
-
                 'email_verified_at' => $user->email_verified_at,
-
-                // Driver onboarding status
                 'profile_completed' => $user->profile_completed,
                 'password_changed' => $user->password_changed,
             ],
@@ -84,7 +63,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Logout
+     * POST /api/logout
      */
     public function logout(Request $request)
     {
@@ -94,6 +73,9 @@ class AuthController extends Controller
             $user->currentAccessToken()->delete();
         }
 
-        return response()->noContent();
+        return response()->json([
+            'success' => true,
+            'message' => 'Logged out successfully.',
+        ]);
     }
 }

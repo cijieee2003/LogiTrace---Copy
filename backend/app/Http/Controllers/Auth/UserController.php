@@ -8,8 +8,6 @@ use Illuminate\Http\Request;
 class UserController extends Controller
 {
     /**
-     * Get authenticated user.
-     *
      * GET /api/user
      */
     public function user(Request $request)
@@ -27,10 +25,7 @@ class UserController extends Controller
             'username' => $user->username,
             'email' => $user->email,
             'role' => $user->role,
-
             'email_verified_at' => $user->email_verified_at,
-
-            // Driver onboarding status
             'profile_completed' => $user->profile_completed,
             'password_changed' => $user->password_changed,
         ]);
