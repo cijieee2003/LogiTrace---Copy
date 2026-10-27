@@ -1,4 +1,3 @@
-
 import {
   createContext,
   useContext,
@@ -18,152 +17,73 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [btnLoading, setBtnLoading] = useState(false);
 
-  /*
-  |--------------------------------------------------------------------------
-  | SAVE OR REMOVE TOKEN
-  |--------------------------------------------------------------------------
-  */
+  // Save or remove token
+  const setToken = (token) => {
+    _setToken(token);
 
-  const setToken = (newToken) => {
-    _setToken(newToken);
-
-    if (newToken) {
-      localStorage.setItem("token", newToken);
+    if (token) {
+      localStorage.setItem("token", token);
     } else {
       localStorage.removeItem("token");
     }
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | GET AUTHENTICATED USER
-  |--------------------------------------------------------------------------
-  */
-
+  // Get authenticated user
   const getUser = async () => {
     try {
       const { data } = await axiosClient.get("/user");
 
       setUser(data);
-
-      return data;
     } catch (error) {
-      console.error("Failed to get user:", {
-        status: error.response?.status,
-        response: error.response?.data,
-        message: error.message,
-      });
+      console.error("Failed to get user:", error);
 
-      setUser({});
+      // Token is invalid or expired
       setToken(null);
-
-      return null;
+      setUser({});
     } finally {
       setLoading(false);
     }
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | REFRESH USER
-  |--------------------------------------------------------------------------
-  */
-
-  const refreshUser = async () => {
-    try {
-      const { data } = await axiosClient.get("/user");
-
-      setUser(data);
-
-      return data;
-    } catch (error) {
-      console.error("Failed to refresh user:", {
-        status: error.response?.status,
-        response: error.response?.data,
-        message: error.message,
-      });
-
-      return null;
-    }
-  };
-
-  /*
-  |--------------------------------------------------------------------------
-  | LOGIN
-  |--------------------------------------------------------------------------
-  */
-
-  const login = async (credentials) => {
+  // Login
+  const login = async (data) => {
     setBtnLoading(true);
 
     try {
-      const response = await axiosClient.post(
-        "/login",
-        credentials
-      );
+      const response = await axiosClient.post("/login", data);
 
-      const newToken = response.data?.token;
+      const newToken = response.data.token;
 
-      if (!newToken) {
-        throw new Error(
-          "Login response does not contain an authentication token."
-        );
-      }
-
-      // Save token before requesting the authenticated user.
+      // Save token
       setToken(newToken);
 
-      const { data } = await axiosClient.get("/user");
-
-      setUser(data);
+      // Get user information
+      await getUser();
 
       return true;
     } catch (error) {
-      console.error("Login failed:", {
-        url: error.config?.baseURL
-          ? `${error.config.baseURL}${error.config.url || ""}`
-          : error.config?.url,
-        status: error.response?.status,
-        response: error.response?.data,
-        message: error.message,
-      });
+      console.error("Login failed:", error);
 
-      setToken(null);
-      setUser({});
-
-      throw error;
+      return false;
     } finally {
       setBtnLoading(false);
     }
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | LOGOUT
-  |--------------------------------------------------------------------------
-  */
-
+  // Logout
   const logout = async () => {
     try {
       await axiosClient.post("/logout");
     } catch (error) {
-      console.error("Logout request failed:", {
-        status: error.response?.status,
-        response: error.response?.data,
-        message: error.message,
-      });
+      console.error("Logout request failed:", error);
     } finally {
+      // Clear authentication even if API request fails
       setToken(null);
       setUser({});
     }
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | CHECK AUTHENTICATION WHEN APP STARTS
-  |--------------------------------------------------------------------------
-  */
-
+  // Check authentication when app starts
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
 
@@ -174,12 +94,6 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  /*
-  |--------------------------------------------------------------------------
-  | AUTH CONTEXT
-  |--------------------------------------------------------------------------
-  */
-
   return (
     <stateContext.Provider
       value={{
@@ -189,7 +103,6 @@ export const AuthProvider = ({ children }) => {
         btnLoading,
         login,
         logout,
-        refreshUser,
       }}
     >
       {children}
@@ -197,12 +110,7 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-/*
-|--------------------------------------------------------------------------
-| CUSTOM AUTHENTICATION HOOK
-|--------------------------------------------------------------------------
-*/
-
+// Custom authentication hook
 export const useStateContext = () => {
   const context = useContext(stateContext);
 
