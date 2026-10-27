@@ -9,27 +9,35 @@ const axiosClient = axios.create({
   },
 });
 
-// Add the authentication token to requests.
+// Add Bearer token to every request when available
 axiosClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
 
     if (token) {
-      config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
     }
 
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    return Promise.reject(error);
+  }
 );
 
-// Handle API errors.
+// Handle API responses and authentication errors
 axiosClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
+      console.log("Unauthorized - token may be expired");
+
       localStorage.removeItem("token");
+
+      // Uncomment if you want to redirect automatically to login
+      // window.location.href = "/login";
     }
 
     return Promise.reject(error);
