@@ -1,8 +1,10 @@
+
 import {
   createContext,
   useContext,
   useEffect,
   useState,
+  useCallback,
 } from "react";
 
 import axiosClient from "../api/axiosClient";
@@ -10,167 +12,168 @@ import axiosClient from "../api/axiosClient";
 const stateContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState({});
-  const [token, _setToken] = useState(
-    localStorage.getItem("token")
+  const [user, setUser] = useState(null);
+  const [token, setTokenState] = useState(
+    () => localStorage.getItem("token")
   );
   const [loading, setLoading] = useState(true);
   const [btnLoading, setBtnLoading] = useState(false);
 
-  /*
-  |--------------------------------------------------------------------------
-  | SAVE OR REMOVE TOKEN
-  |--------------------------------------------------------------------------
-  */
-
-  const setToken = (token) => {
-    _setToken(token);
-
-    if (token) {
-      localStorage.setItem("token", token);
+  // Save token in React state and localStorage.
+  const setToken = useCallback((newToken) => {
+    if (newToken) {
+      localStorage.setItem("token", newToken);
     } else {
       localStorage.removeItem("token");
     }
-  };
 
-  /*
-  |--------------------------------------------------------------------------
-  | GET AUTHENTICATED USER
-  |--------------------------------------------------------------------------
-  */
+    setTokenState(newToken || null);
+  }, []);
 
-  const getUser = async () => {
+  // Clear authentication information.
+  const clearAuth = useCallback(() => {
+    localStorage.removeItem("token");
+    setTokenState(null);
+    setUser(null);
+  }, []);
+
+  // Get the currently authenticated user.
+  const getUser = useCallback(async () => {
+    if (!localStorage.getItem("token")) {
+      setUser(null);
+      setLoading(false);
+      return false;
+    }
+
     try {
-      const { data } = await axiosClient.get("/user");
+      const response = await axiosClient.get("/user");
 
-      setUser(data);
-
-      return data;
+      setUser(response.data.user ?? response.data);
+      return true;
     } catch (error) {
-      console.error("Failed to get user:", error);
+      console.error(
+        "Failed to fetch authenticated user:",
+        error.response?.status,
+        error.response?.data ?? error.message
+      );
 
-      // Token is invalid or expired
-      setToken(null);
-      setUser({});
+      // Only clear authentication when the server rejects
+      // the credentials, not for every network/server error.
+      if (
+        error.response?.status === 401 ||
+        error.response?.status === 403
+      ) {
+        clearAuth();
+      }
 
-      return null;
+      return false;
     } finally {
       setLoading(false);
     }
-  };
+  }, [clearAuth]);
 
-  /*
-  |--------------------------------------------------------------------------
-  | REFRESH USER
-  |--------------------------------------------------------------------------
-  |
-  | Used after the driver:
-  |
-  | 1. Completes their profile
-  | 2. Changes their password
-  |
-  */
-
-  const refreshUser = async () => {
-    try {
-      const { data } = await axiosClient.get("/user");
-
-      setUser(data);
-
-      return data;
-    } catch (error) {
-      console.error("Failed to refresh user:", error);
-
-      return null;
-    }
-  };
-
-  /*
-  |--------------------------------------------------------------------------
-  | LOGIN
-  |--------------------------------------------------------------------------
-  */
-
-  const login = async (data) => {
+  // Login.
+  const login = async (credentials) => {
     setBtnLoading(true);
 
     try {
       const response = await axiosClient.post(
         "/login",
-        data
+        credentials
       );
 
-      const newToken = response.data.token;
+      // Supports common Laravel token response formats.
+      const newToken =
+        response.data?.token ??
+        response.data?.access_token ??
+        response.data?.data?.token;
 
-      // Save token
+      if (!newToken) {
+        console.error(
+          "Login response did not contain a token:",
+          response.data
+        );
+
+        return {
+          success: false,
+          message:
+            response.data?.message ??
+            "Login succeeded without a recognized token. Check the API response.",
+        };
+      }
+
+      // Save the token BEFORE requesting /user.
       setToken(newToken);
 
-      /*
-      |--------------------------------------------------------------------------
-      | Get Fresh User Information
-      |--------------------------------------------------------------------------
-      |
-      | This gets:
-      |
-      | profile_completed
-      | password_changed
-      |
-      */
+      // Use the user returned by login if available.
+      const returnedUser =
+        response.data?.user ?? response.data?.data?.user;
 
-      await getUser();
+      if (returnedUser) {
+        setUser(returnedUser);
+        setLoading(false);
 
-      return true;
+        return { success: true };
+      }
+
+      // Otherwise fetch the authenticated user.
+      const userLoaded = await getUser();
+
+      if (!userLoaded) {
+        clearAuth();
+
+        return {
+          success: false,
+          message:
+            "Login returned a token, but the user profile could not be loaded. Check the /user endpoint.",
+        };
+      }
+
+      return { success: true };
     } catch (error) {
-      console.error("Login failed:", error);
+      console.error(
+        "Login failed:",
+        error.response?.status,
+        error.response?.data ?? error.message
+      );
 
-      return false;
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ??
+          "Unable to log in. Please check your credentials and try again.",
+      };
     } finally {
       setBtnLoading(false);
     }
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | LOGOUT
-  |--------------------------------------------------------------------------
-  */
-
+  // Logout.
   const logout = async () => {
     try {
-      await axiosClient.post("/logout");
+      if (localStorage.getItem("token")) {
+        await axiosClient.post("/logout");
+      }
     } catch (error) {
       console.error(
-        "Logout request failed:",
-        error
+        "Logout API request failed:",
+        error.response?.status,
+        error.response?.data ?? error.message
       );
     } finally {
-      // Clear authentication even if API request fails
-      setToken(null);
-      setUser({});
+      clearAuth();
+      setLoading(false);
     }
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | CHECK AUTHENTICATION WHEN APP STARTS
-  |--------------------------------------------------------------------------
-  */
-
+  // Restore the session when the application starts.
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-
-    if (storedToken) {
+    if (localStorage.getItem("token")) {
       getUser();
     } else {
       setLoading(false);
     }
-  }, []);
-
-  /*
-  |--------------------------------------------------------------------------
-  | AUTH CONTEXT
-  |--------------------------------------------------------------------------
-  */
+  }, [getUser]);
 
   return (
     <stateContext.Provider
@@ -179,25 +182,15 @@ export const AuthProvider = ({ children }) => {
         token,
         loading,
         btnLoading,
-
-        // Authentication
         login,
         logout,
-
-        // Refresh authenticated user
-        refreshUser,
+        getUser,
       }}
     >
       {children}
     </stateContext.Provider>
   );
 };
-
-/*
-|--------------------------------------------------------------------------
-| CUSTOM AUTHENTICATION HOOK
-|--------------------------------------------------------------------------
-*/
 
 export const useStateContext = () => {
   const context = useContext(stateContext);
