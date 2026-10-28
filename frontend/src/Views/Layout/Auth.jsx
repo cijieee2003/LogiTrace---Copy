@@ -42,9 +42,7 @@ const Auth = () => {
                       className="h-10 w-10 object-contain"
                     />
           
-                    <span className="ml-2 text-lg font-bold text-blue-600">
-                      LogiTrace
-                    </span>
+                    
                   </div>
 
           {/* BRAND CONTENT */}
