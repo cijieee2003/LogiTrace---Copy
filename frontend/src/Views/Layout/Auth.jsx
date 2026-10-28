@@ -39,7 +39,7 @@ const Auth = () => {
                     <img
                       src={Logo}
                       alt="LogiTrace Logo"
-                      className="h-16 w-16 object-contain"
+                      className="h-27 w-27 object-contain"
                     />
           
                     
