@@ -2,10 +2,12 @@
 import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useStateContext } from "../../context/AuthProvider";
+import Logo from "../../assets/images/qwerty.png";
 
 const Auth = () => {
   const { token, user } = useStateContext();
 
+  // Redirect authenticated users according to their role
   if (token && user) {
     switch (user.role) {
       case "superadmin":
@@ -32,14 +34,18 @@ const Auth = () => {
         {/* LEFT SIDE - DESKTOP ONLY */}
         <section className="hidden lg:flex lg:min-h-screen lg:w-[53%] lg:flex-col lg:justify-between lg:bg-white lg:px-14 lg:py-8 xl:px-16">
 
-          {/* HEADER */}
-          <div className="flex items-center justify-between">
-            {/* LOGITRACE LOGO */}
-            <div className="flex items-center gap-2 text-[22px] font-bold tracking-tight text-[#17243d]">
-              <span className="h-[15px] w-[15px] rounded-full bg-blue-600 shadow-[0_0_0_4px_#dbeafe]" />
-              <span>LogiTrace</span>
-            </div>
-          </div>
+          {/* HEADER - IMAGE LOGO */}
+          <div className="flex items-center">
+                    <img
+                      src={Logo}
+                      alt="LogiTrace Logo"
+                      className="h-10 w-10 object-contain"
+                    />
+          
+                    <span className="ml-2 text-lg font-bold text-blue-600">
+                      LogiTrace
+                    </span>
+                  </div>
 
           {/* BRAND CONTENT */}
           <div className="w-full max-w-xl">
@@ -65,10 +71,10 @@ const Auth = () => {
                 {/* BACKGROUND LINE */}
                 <div className="absolute left-2 right-2 top-2 h-[2px] bg-[#d7e0eb]" />
 
-                {/* ACTIVE LINE */}
+                {/* ACTIVE BLUE LINE */}
                 <div className="absolute left-2 top-2 h-[2px] w-[38%] bg-blue-600" />
 
-                {/* DOTS */}
+                {/* CHECKPOINT DOTS */}
                 <div className="relative flex items-center justify-between">
 
                   {/* PENDING */}
@@ -90,9 +96,10 @@ const Auth = () => {
                   <span className="h-[18px] w-[18px] rounded-full border-2 border-[#d7e0eb] bg-white" />
                 </div>
 
-                {/* LABELS */}
+                {/* CHECKPOINT LABELS */}
                 <div className="mt-3 flex text-center font-mono text-[10px] text-[#637895]">
                   <span className="w-1/6">PENDING</span>
+
                   <span className="w-1/6">ARRIVAL</span>
 
                   <span className="w-1/6 font-bold text-blue-700">
@@ -100,7 +107,9 @@ const Auth = () => {
                   </span>
 
                   <span className="w-1/6">UNLOADING</span>
+
                   <span className="w-1/6">CHECKING</span>
+
                   <span className="w-1/6">DELIVERED</span>
                 </div>
               </div>
@@ -115,9 +124,11 @@ const Auth = () => {
 
         {/* RIGHT SIDE - LOGIN */}
         <section className="flex min-h-screen w-full flex-1 items-center justify-center bg-[#f2f6fc] px-6 py-8 sm:px-10 landscape:py-4 lg:min-h-screen lg:w-[47%] lg:px-12 lg:py-10 xl:px-16">
+
           <div className="w-full max-w-[448px] landscape:max-w-[430px]">
             <Outlet />
           </div>
+
         </section>
       </div>
     </div>
