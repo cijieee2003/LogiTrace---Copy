@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, XCircle, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, XCircle } from "lucide-react";
 import { useStateContext } from "../../../context/AuthProvider";
 import SpinnerButton from "../../Components/SpinnerButton";
 
@@ -45,8 +45,7 @@ const Login = () => {
 
       if (status === 401 || status === 422) {
         setError(
-          status === 422 &&
-          responseData?.errors?.username?.[0]
+          status === 422 && responseData?.errors?.username?.[0]
             ? responseData.errors.username[0]
             : "Your password is wrong."
         );
@@ -73,10 +72,6 @@ const Login = () => {
       <h2 className="text-[26px] font-bold leading-tight tracking-tight text-[#17243d] sm:text-[28px] landscape:text-[22px]">
         Sign in
       </h2>
-
-      
-
-
 
       {error && !showPopup && (
         <div
@@ -158,7 +153,7 @@ const Login = () => {
         <button
           type="submit"
           disabled={btnLoading}
-          className="flex h-11 w-full items-center justify-center gap-2 rounded-md bg-[#f5a623] px-4 text-[14px] font-semibold text-[#111827] shadow-sm transition hover:bg-[#efa01c] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#f5a623] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:h-12 landscape:h-9 landscape:text-[13px]"
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-md bg-blue-600 px-4 text-[14px] font-semibold text-white shadow-sm transition hover:bg-blue-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:h-12 landscape:h-9 landscape:text-[13px]"
         >
           {btnLoading ? (
             <>
@@ -172,7 +167,7 @@ const Login = () => {
       </form>
 
       <div className="mt-20 sm:mt-24 landscape:mt-5 lg:mt-32">
-        <p className="font-serif text-[11px] leading-5 text-[#d6b875] sm:text-[13px] sm:leading-6 landscape:text-[9px] landscape:leading-4 lg:text-[15px]">
+        <p className="font-serif text-[11px] leading-5 text-blue-600 sm:text-[13px] sm:leading-6 landscape:text-[9px] landscape:leading-4 lg:text-[15px]">
           Copyright © Designed &amp; Developed by{" "}
           Goulart C. Cainhog Jr.
           <br />
@@ -210,7 +205,7 @@ const Login = () => {
             <button
               type="button"
               onClick={() => setShowPopup(false)}
-              className="mt-6 w-full rounded-lg bg-[#f5a623] px-4 py-3 font-semibold text-gray-900 transition hover:bg-[#efa01c]"
+              className="mt-6 w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
               Try Again
             </button>
