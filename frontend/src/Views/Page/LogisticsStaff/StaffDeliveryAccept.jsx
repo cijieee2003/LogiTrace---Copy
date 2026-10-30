@@ -45,7 +45,7 @@ import {
 |      ↓
 |   arrival
 |      ↓
-|   queuing
+|   queueing
 |      ↓
 |   unloading
 |      ↓
@@ -73,7 +73,7 @@ const getStatusStyle = (status) => {
     case "arrival":
       return "border-blue-200 bg-blue-50 text-blue-700";
 
-    case "queuing":
+    case "queueing":
       return "border-indigo-200 bg-indigo-50 text-indigo-700";
 
     case "unloading":
@@ -1284,8 +1284,8 @@ const StaffDeliveryAccept = () => {
               Arrival
             </option>
 
-            <option value="queuing">
-              Queuing
+            <option value="queueing">
+              Queueing
             </option>
 
             <option value="unloading">

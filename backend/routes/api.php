@@ -440,7 +440,7 @@ Route::middleware('auth:sanctum')->group(function () {
         | Driver can report during:
         |
         | arrival
-        | queuing
+        | queueing
         | unloading
         | checking
         |

@@ -77,7 +77,7 @@ class IncidentReportController extends Controller
 
         $allowedStatuses = [
             'arrival',
-            'queuing',
+            'queueing',
             'unloading',
             'checking',
         ];
@@ -85,7 +85,7 @@ class IncidentReportController extends Controller
         if (!in_array($delivery->status, $allowedStatuses, true)) {
             return response()->json([
                 'message' =>
-                    'Incident reports can only be submitted during arrival, queuing, unloading, or checking.',
+                    'Incident reports can only be submitted during arrival, queueing, unloading, or checking.',
             ], 422);
         }
 

@@ -77,7 +77,7 @@ const DriverDelivery = () => {
    *    ↓
    * arrival
    *    ↓
-   * queuing
+   * queueing
    *    ↓
    * unloading
    *    ↓
@@ -90,7 +90,7 @@ const DriverDelivery = () => {
 
   const statuses = [
     "arrival",
-    "queuing",
+    "queueing",
     "unloading",
     "checking",
     "delivered",
@@ -98,8 +98,8 @@ const DriverDelivery = () => {
 
   const nextStatus = {
     pick_up: "arrival",
-    arrival: "queuing",
-    queuing: "unloading",
+    arrival: "queueing",
+    queueing: "unloading",
     unloading: "checking",
     checking: "delivered",
   };
@@ -108,7 +108,7 @@ const DriverDelivery = () => {
     pending: "Pending",
     pick_up: "Pick Up",
     arrival: "Arrival",
-    queuing: "Queuing",
+    queueing: "Queueing",
     unloading: "Unloading",
     checking: "Checking",
     delivered: "Delivered",
@@ -116,8 +116,8 @@ const DriverDelivery = () => {
 
   const nextStatusLabels = {
     pick_up: "Start Arrival",
-    arrival: "Start Queuing",
-    queuing: "Start Unloading",
+    arrival: "Start Queueing",
+    queueing: "Start Unloading",
     unloading: "Start Checking",
     checking: "Mark as Delivered",
   };
@@ -130,7 +130,7 @@ const DriverDelivery = () => {
    * Driver can report incidents only during:
    *
    * arrival
-   * queuing
+   * queueing
    * unloading
    * checking
    *
@@ -142,7 +142,7 @@ const DriverDelivery = () => {
    */
 
   const canReportIncident = (status) => {
-    return ["arrival", "queuing", "unloading", "checking"].includes(status);
+    return ["arrival", "queueing", "unloading", "checking"].includes(status);
   };
 
   // =========================================================
@@ -164,7 +164,7 @@ const DriverDelivery = () => {
       case "arrival":
         return "bg-blue-100 text-blue-700";
 
-      case "queuing":
+      case "queueing":
         return "bg-indigo-100 text-indigo-700";
 
       case "unloading":

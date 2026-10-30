@@ -52,7 +52,7 @@ const DriverDashboard = () => {
         "pending",
         "pick_up",
         "arrival",
-        "queuing",
+        "queueing",
         "unloading",
         "checking",
         "delivered",
@@ -62,7 +62,7 @@ const DriverDashboard = () => {
         pending: "Pending",
         pick_up: "Pick Up",
         arrival: "Arrival",
-        queuing: "Queuing",
+        queueing: "Queueing",
         unloading: "Unloading",
         checking: "Checking",
         delivered: "Delivered",
@@ -78,7 +78,7 @@ const DriverDashboard = () => {
         arrival:
             "bg-indigo-50 text-indigo-700 border-indigo-200",
 
-        queuing:
+        queueing:
             "bg-purple-50 text-purple-700 border-purple-200",
 
         unloading:

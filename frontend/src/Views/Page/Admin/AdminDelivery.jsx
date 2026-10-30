@@ -123,7 +123,7 @@ function AdminDelivery() {
       case "arrival":
         return "bg-indigo-100 text-indigo-700";
 
-      case "queuing":
+      case "queueing":
         return "bg-orange-100 text-orange-700";
 
       case "unloading":
@@ -220,7 +220,7 @@ function AdminDelivery() {
     [
       "pick_up",
       "arrival",
-      "queuing",
+      "queueing",
       "unloading",
       "checking",
     ].includes(delivery.status)
@@ -437,8 +437,8 @@ function AdminDelivery() {
                 Arrival
               </option>
 
-              <option value="queuing">
-                Queuing
+              <option value="queueing">
+                Queueing
               </option>
 
               <option value="unloading">
@@ -941,7 +941,7 @@ function AdminDelivery() {
                       <span>Pending</span>
                       <span>Pick Up</span>
                       <span>Arrival</span>
-                      <span>Queuing</span>
+                      <span>Queueing</span>
                       <span>Unloading</span>
                       <span>Checking</span>
                       <span>Delivered</span>
@@ -963,7 +963,7 @@ function AdminDelivery() {
                                 "arrival"
                               ? "42%"
                               : selectedDelivery.status ===
-                                "queuing"
+                                "queueing"
                               ? "57%"
                               : selectedDelivery.status ===
                                 "unloading"

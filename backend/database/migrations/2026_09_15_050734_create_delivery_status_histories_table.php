@@ -34,7 +34,7 @@ return new class extends Migration
             | Example:
             | pick_up
             | arrival
-            | queuing
+            | queueing
             | unloading
             | checking
             | delivered

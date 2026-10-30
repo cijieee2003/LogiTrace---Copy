@@ -301,7 +301,7 @@ class DeliveryController extends Controller
     |    ↓
     | arrival
     |    ↓
-    | queuing
+    | queueing
     |    ↓
     | unloading
     |    ↓
@@ -363,7 +363,7 @@ class DeliveryController extends Controller
             'status' => [
                 'required',
                 'string',
-                'in:arrival,queuing,unloading,checking,delivered',
+                'in:arrival,queueing,unloading,checking,delivered',
             ],
         ]);
 
@@ -379,8 +379,8 @@ class DeliveryController extends Controller
 
         $allowedTransitions = [
             'pick_up' => 'arrival',
-            'arrival' => 'queuing',
-            'queuing' => 'unloading',
+            'arrival' => 'queueing',
+            'queueing' => 'unloading',
             'unloading' => 'checking',
             'checking' => 'delivered',
         ];

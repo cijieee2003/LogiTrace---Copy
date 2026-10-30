@@ -24,7 +24,7 @@ return new class extends Migration
                 'pending',
                 'pick_up',
                 'arrival',
-                'queuing',
+                'queueing',
                 'unloading',
                 'checking',
                 'delivered',

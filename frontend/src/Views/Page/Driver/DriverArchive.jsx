@@ -38,7 +38,7 @@ const DriverArchive = () => {
   const statuses = [
     "pick_up",
     "arrival",
-    "queuing",
+    "queueing",
     "unloading",
     "checking",
     "delivered",
@@ -48,7 +48,7 @@ const DriverArchive = () => {
     pending: "Pending",
     pick_up: "Pick Up",
     arrival: "Arrival",
-    queuing: "Queuing",
+    queueing: "Queueing",
     unloading: "Unloading",
     checking: "Checking",
     delivered: "Delivered",
@@ -77,7 +77,7 @@ const DriverArchive = () => {
       case "arrival":
         return "bg-blue-100 text-blue-700";
 
-      case "queuing":
+      case "queueing":
         return "bg-indigo-100 text-indigo-700";
 
       case "unloading":

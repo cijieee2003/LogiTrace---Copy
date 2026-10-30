@@ -1012,7 +1012,7 @@
     </tr>
 
 
-    <!-- QUEUING -->
+    <!-- queueing -->
 
     <tr>
 
@@ -1021,15 +1021,15 @@
             <span class="status-dot"></span>
 
             <span class="status-name">
-                Queuing
+                Queueing
             </span>
 
         </td>
 
         <td class="timestamp-date">
 
-            @if($getStatusDate('queuing'))
-                {{ $getStatusDate('queuing') }}
+            @if($getStatusDate('queueing'))
+                {{ $getStatusDate('queueing') }}
             @else
                 <span class="timestamp-empty">—</span>
             @endif
@@ -1038,8 +1038,8 @@
 
         <td class="timestamp-time">
 
-            @if($getStatusTime('queuing'))
-                {{ $getStatusTime('queuing') }}
+            @if($getStatusTime('queueing'))
+                {{ $getStatusTime('queueing') }}
             @else
                 <span class="timestamp-empty">—</span>
             @endif

@@ -361,7 +361,7 @@ class AdminHistoryController extends Controller
                 $statusLabels = [
                     'pick_up' => 'Pick Up',
                     'arrival' => 'Arrival',
-                    'queuing' => 'Queuing',
+                    'queueing' => 'Queueing',
                     'unloading' => 'Unloading',
                     'checking' => 'Checking',
                     'delivered' => 'Delivered',

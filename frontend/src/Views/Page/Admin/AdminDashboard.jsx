@@ -23,7 +23,7 @@ const DELIVERY_STATUSES = [
   "pending",
   "pick_up",
   "arrival",
-  "queuing",
+  "queueing",
   "unloading",
   "checking",
   "delivered",
@@ -884,7 +884,7 @@ function AdminDashboard() {
       case "arrival":
         return "bg-indigo-100 text-indigo-700";
 
-      case "queuing":
+      case "queueing":
         return "bg-purple-100 text-purple-700";
 
       case "unloading":

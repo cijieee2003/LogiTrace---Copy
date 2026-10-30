@@ -1137,7 +1137,7 @@
                     <td>
 
                         <div class="signature-line">
-                            Prepared By
+                            Received By
                         </div>
 
                         <div class="signature-label">
@@ -1149,7 +1149,7 @@
                     <td>
 
                         <div class="signature-line">
-                            Verified By
+                            Checked By
                         </div>
 
                         <div class="signature-label">
